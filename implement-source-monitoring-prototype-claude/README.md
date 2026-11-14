@@ -29,7 +29,7 @@ Normal use makes **no external requests** (no analytics, fonts, CDNs). The built
 
 ```sh
 npm run typecheck           # tsc for app and tests
-npm test                    # 109 unit tests (Vitest)
+npm test                    # 149 unit + component tests (Vitest)
 npx playwright install chromium    # ONE-TIME browser download (internet needed); on Linux you may also need system libraries
 npm run test:all            # typecheck + build + unit + browser tests; writes outputs to test-results/
 ```
@@ -69,7 +69,7 @@ See `DEMO_5_MIN.md` (same steps, with the exact values you should see).
 ## Layout of this ZIP
 
 ```
-src/engine/    pure deterministic engine (types, validation, replay reducer, derivation, dependency + disagreement, record)
+src/engine/    pure deterministic engine (types, validation, replay reducer, derivation, dependency + disagreement, record, adapter)
 src/ui/        React UI (no engine logic)       src/App.tsx   entry
 fixtures/      reference-fixture.json, html-literal-test.json, invalid/*.json
 tests/unit/    Vitest          tests/e2e/   Playwright (against dist/index.html over file://)
@@ -80,6 +80,25 @@ docs/SCHEMA.md   RESULTS_AND_LIMITATIONS.md   CHANGES_AND_PROVENANCE.md   DEMO_5
 dist/index.html  prebuilt single-file app
 ```
 
-## Optional hardware adapter
+## Optional test feed adapter (§7)
 
-**Not implemented.** No serial/USB code exists, and no board was connected or tested. Nothing in the app depends on hardware or on a browser serial API.
+**Implemented in software; no hardware was attached or tested.** Ported from the Protocol Argon
+implementation during the 2026-11-14 merge pass.
+
+It is a separate panel at the bottom of the workbench, and nothing else in the app depends on it.
+Its buttons emit **synthetic frames inside the browser tab** — there is no serial/USB/WebSerial code,
+no network call, and no wall-clock read. The panel is labelled
+`UNTESTED — NO PHYSICAL DEVICE ATTACHED`.
+
+What it is for is practising the transitions a real adapter would have to get right:
+
+1. Tick **Opt in**, then **Simulate a valid heartbeat** → the card shows `FRESH HEARTBEAT (AGE 0s < 5s THRESHOLD)`.
+2. **Simulate a poll failure** → the card immediately becomes `DISCONNECTED / POLL FAILED — STATUS UNKNOWN (NOT FRESH)`. A cached card never survives a failure looking current.
+3. **Advance local clock 1 s** repeatedly → the cached snapshot age counts up (1 s, 2 s, …) while the card stays unknown.
+4. Leave it long enough without a failure and the age crosses the threshold → `STALE / UNKNOWN`.
+5. **Simulate a valid heartbeat** again → `FRESH HEARTBEAT (RESUMED AFTER A Ns GAP)`. That is a statement about *receipt*, not about any device or area.
+6. **Simulate a late out-of-order callback** → ignored, and the ignored count increments. State cannot roll backwards.
+
+Turning opt-in off discards the cache. This state is deliberately **not** part of the exported
+record; the record contains the replayed event log. Covered by `tests/unit/adapter.test.ts`
+(28 tests) and `tests/unit/ui.test.tsx` (11 component tests).

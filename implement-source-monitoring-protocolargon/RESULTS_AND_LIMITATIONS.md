@@ -4,7 +4,7 @@
 
 | Spec Section | Status | Evidence Paths & Summary |
 |---|---|---|
-| **1. Purpose and non-negotiable boundaries** | **PASS** | `src/components/GroundTruthBlindSpotView.tsx`, `src/App.tsx`, `dist/index.html`. Replaces and removes `src/components/BenchmarkTacticalView.tsx` from the workflow and bundle. Labels all data as synthetic or user-provided (unverified). Explicitly states a fresh heartbeat is not proof of sensor accuracy or scene safety, silence is not a clear scene, and different IDs do not prove independence. No regex PII scrubber, Brier score, Sybil claim, or simulated hardware unplug is included. |
+| **1. Purpose and non-negotiable boundaries** | **PARTIAL** — corrected 2026-11-14 | `src/components/GroundTruthBlindSpotView.tsx`, `src/App.tsx`, `dist/index.html`. **What holds:** `src/components/BenchmarkTacticalView.tsx` is deleted from the workflow and the bundle; the new workbench labels all data synthetic or user-provided, states that a fresh heartbeat is not proof of sensor accuracy or scene safety, that silence is not a clear scene, and that different IDs do not prove independence; and it computes no regex scrubber, Brier score or simulated hardware unplug. **What does not hold (this row previously claimed PASS):** the surrounding Idea Studio showcase was retained, so `src/data/reviewData.ts`, `src/data/ukraineResearchData.ts` and `src/components/NexusTrustLineView.tsx` still ship the forbidden claim vocabulary in `dist/index.html`. Verified occurrence counts in the built bundle: `Brier` ×12, `Sybil` ×1, `OPSEC scrubbing` ×1, `Raspberry Pi` ×9 — including the literal string `"3-Tier OPSEC Anonymity & PII Scrubber"` (`ukraineResearchData.ts:167`). These are reachable through the `nexus`, `fiber`, `mantavia`, `thermal` and `phalanx` tabs, which carry no disclaimer. The verification command in §2 (Command 2) greps only four literals specific to the deleted `BenchmarkTacticalView.tsx`, so it passes while the wider claim class still ships. |
 | **2. Architecture and usability** | **PASS** | Pure deterministic derivation engine in `src/engine/replayEngine.ts`, validator in `src/engine/validator.ts`, storage in `src/engine/localStorageSession.ts`, UI in `src/components/GroundTruthBlindSpotView.tsx`. Keyboard operable, responsive down to 390px viewport width, statuses distinguished by icons (`●`, `▲`, `◌`), border styles (solid/dashed/dotted), SVG patterns, and text badges. Zero external network requests during normal operation. |
 | **3. Data, time, and status model** | **PASS** | `src/engine/types.ts`, `src/engine/replayEngine.ts`, `fixtures/reference-fixture.json`. Implements versioned schema `groundtruth-blindspot/v1`, integer/finite elapsed seconds with documented conversion (`1s = 1000ms`), strict causal filtering (`receivedAt <= T`), deterministic tie-breaking (`receivedAt ASC, id ASC`), exact threshold boundary transitions (`0 <= T - lastHb < threshold` vs `>= threshold`), separate `lastPacketReceivedAt`, `lastHeartbeatReceivedAt`, `observedAt`, `observationAge`, `clockQuality`, and deterministic `clockSkew` flagging when `observedAt > receivedAt`. |
 | **4. Deterministic reference fixture and expected states** | **PASS** | `fixtures/reference-fixture.json`, `public/fixtures/reference-fixture.json`, `src/fixtures/referenceFixture.ts`, `tests/engineAndUi.test.tsx`, `tests/browser-e2e.spec.ts`. Implements the exact 12s duration, 5s threshold reference fixture (Sources A, B, C; `gateway-1`, `power-1`, `power-2`; heartbeats `A@0, B@0, A@5, B@7`; observations `A@2 indicator=on`, `B@2 indicator=off`, `B@6` backfill `observedAt=1`). Verified at `T=0, 2, 5, 6, 7, 10, 12`. |
@@ -49,6 +49,23 @@ dist/index.html  539.10 kB │ gzip: 153.04 kB
 $ grep -E "QUARANTINED_SYBIL|REDACTED-VANTAGE-POINT|SAM MISSILE SAVED|TelegramBot_UA_Watch88" dist/index.html || echo "CLEAN: Zero legacy BenchmarkTacticalView claims in dist/index.html"
 CLEAN: Zero legacy BenchmarkTacticalView claims in dist/index.html
 ```
+
+> **This check is too narrow to support a §1 PASS (corrected 2026-11-14).** It greps four literals
+> that only ever appeared in the deleted `BenchmarkTacticalView.tsx`. A check against the claim
+> *vocabulary* spec §1 forbids finds them still present in the shipped bundle:
+>
+> ```text
+> $ for s in Brier Sybil "OPSEC scrubbing" "Raspberry Pi"; do \
+>     printf "%-18s %s\n" "$s" "$(grep -oi "$s" dist/index.html | wc -l)"; done
+> Brier              12
+> Sybil              1
+> OPSEC scrubbing    1
+> Raspberry Pi       9
+> ```
+>
+> They come from `src/data/reviewData.ts`, `src/data/ukraineResearchData.ts` and
+> `src/components/NexusTrustLineView.tsx`, which `CHANGES_AND_PROVENANCE.md` §3 discloses as
+> "Reused Unchanged". Removing or gating those showcase views is required for §1 to hold.
 
 ### Command 3: Portable Unit & Component Tests (Vitest)
 ```text

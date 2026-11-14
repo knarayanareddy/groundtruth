@@ -42,3 +42,66 @@ Specification, fixture requirements and expected states: the handoff documents (
 
 ## Not claimed
 No physical connection, calibration, real-world incident, authentication, anonymity, certification, field validation or measured system performance. No hardware adapter exists.
+
+---
+
+# Merge pass (2026-11-14) — this directory is now the canonical implementation
+
+An end-to-end review of the whole repository (`.review/REVIEW.md`) found both independent
+implementations' replay engines to be **equally correct** against spec §4 — all seven expected
+snapshots and the same six-transition list, reproduced by harnesses that drive each team's shipped
+engine directly. The differentiator was claim hygiene, where this copy was clean and the Protocol
+Argon copy shipped forbidden vocabulary in its production bundle. So this implementation was kept as
+the base, and the genuinely additive parts of the other were ported in.
+
+## Ported from `../implement-source-monitoring-protocolargon/` (attribution)
+
+| Added here | Origin | What changed in the port |
+|---|---|---|
+| `src/engine/adapter.ts` | `src/engine/localFeedAdapter.ts` (330 lines) | Rewritten for this codebase's conventions. Same guarantees: monotonic callback sequence, immediate loss of the fresh card on failure, locally advancing age, recovery reporting. Improvements: non-integer callback sequences are refused; the threshold falls back safely on `0`/negative/`NaN`; the "recovered after Ns" note is cleared by the next healthy poll instead of persisting; opt-out discards the cache. |
+| `src/ui/AdapterPanel.tsx` | the adapter section of `GroundTruthBlindSpotView.tsx` | New panel using this app's `shared.tsx` primitives, `data-testid` hooks, and non-colour status coding (glyph + border style + text). Adds an explicit "simulate a late out-of-order callback" button so the ordering guarantee is visible in the UI. |
+| `tests/unit/adapter.test.ts` (28 tests) | assertions in Argon's `tests/engineAndUi.test.tsx` / `browser-e2e.spec.ts` | Rewritten as portable unit tests so they run without a browser. |
+
+Argon's `Atech`-specific labels were replaced with a device-neutral
+`UNTESTED — NO PHYSICAL DEVICE ATTACHED`, because this codebase's bundle test forbids that token and
+no such board was ever attached here.
+
+**Not ported:** Argon's retained Idea Studio showcase (`reviewData.ts`, `ukraineResearchData.ts`,
+`NexusTrustLineView`, and the four other legacy views). Spec §1 forbids the claims they contain; that
+is precisely the defect the review found in that copy.
+
+## Fixes made during the merge pass
+
+1. **CSP no longer depends on the `postbuild` hook.** The limitation "if someone builds with
+   `npx vite build` directly, the CSP meta is absent" is now fixed: a `cspMeta()` plugin in
+   `vite.config.ts` injects the tag during the build. `scripts/harden-dist.mjs` became a *verifier*
+   that fails the build if the tag or its key directives are missing. Verified: a bare
+   `npx vite build --outDir /tmp/rawbuild` now emits `default-src 'none'`.
+2. **Dead Vite modulepreload polyfill removed** via `build.modulePreload.polyfill: false`. The
+   single-file build emits no `<link rel="modulepreload">`, so the polyfill was unreachable; dropping
+   it takes the bundle's `fetch(` count from 1 to **0**.
+3. **A brittle test was replaced.** `claims-and-bundle.test.ts` asserted the bundle was clean by
+   deleting the literal string `"fetch(_.href,x)"` — minifier output. A rebuild that renamed the
+   minified variables made it fail spuriously. It now asserts the property (no network API; any
+   `fetch(` must sit inside the modulepreload polyfill) without matching minifier names.
+4. **Directory renamed** from `implement-source-monitoring-prototype claude` (embedded space broke
+   naive shell scripting) to `implement-source-monitoring-prototype-claude`.
+5. **Component tests added** (`tests/unit/ui.test.tsx`, jsdom + Testing Library): the app mounts, the
+   fixture drives it, and every adapter interaction is exercised in a real DOM. This project
+   previously had no component-level coverage at all.
+
+## Dependencies added by the merge pass
+
+`jsdom 29.1.1`, `@testing-library/react 16.3.3`, `@testing-library/dom 10.4.1` — all installed with
+`--save-exact`, matching the existing exact-pin convention (verified: no `^` or `~` remains in
+`package.json`). Runtime dependencies are unchanged. `npm ci` from the regenerated lockfile installs
+173 packages and the suite passes.
+
+## What the merge pass could not verify
+
+Browser E2E was **not** run: no Playwright browser is installed in this environment and
+`cdn.playwright.dev` is unreachable (confirmed: connection fails, while `registry.npmjs.org` returns
+200). So `tests/e2e/*` remains unexecuted after these changes, and no new browser test was added for
+the adapter — an unrunnable test would have been an unverified claim. The adapter is covered by 28
+unit tests and 11 DOM component tests instead. Accessibility, narrow-viewport behaviour and anything
+on macOS remain untested, as before.

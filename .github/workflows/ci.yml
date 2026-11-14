@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: ${{ matrix.project.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - dir: implement-source-monitoring-prototype-claude
+            label: canonical
+            e2e: true
+          - dir: implement-source-monitoring-protocolargon
+            label: superseded-protocolargon
+            e2e: false
+    defaults:
+      run:
+        working-directory: ${{ matrix.project.dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.project.dir }}/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit ${{ matrix.project.dir == 'implement-source-monitoring-prototype-claude' && '&& npx tsc --noEmit -p tsconfig.test.json' || '' }}
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Install Playwright browser
+        if: matrix.project.e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        if: matrix.project.e2e
+        run: npx playwright test
+
+      - name: Upload browser test report
+        if: matrix.project.e2e && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project.label }}
+          path: ${{ matrix.project.dir }}/test-results/
+          if-no-files-found: ignore
+
+  bundle-claims:
+    name: built bundle carries no forbidden claims
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: implement-source-monitoring-prototype-claude
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: implement-source-monitoring-prototype-claude/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      # Independent of the in-repo test: grep the shipped artifact directly.
+      - name: scan dist/index.html
+        run: |
+          fail=0
+          # -w (whole word) matters: "Atech" appears as a substring of React's `rateChange` DOM event
+          # name, which is a false positive. Match words, not substrings.
+          for term in Brier Sybil Atech OPSEC "Raspberry Pi" scrub "live feed"; do
+            n=$(grep -oiw -- "$term" dist/index.html | wc -l | tr -d ' ')
+            printf '%-16s %s\n' "$term" "$n"
+            if [ "$n" != "0" ]; then fail=1; fi
+          done
+          if [ "$fail" != "0" ]; then
+            echo "::error::forbidden claim vocabulary found in the built bundle"
+            exit 1
+          fi
+          echo "bundle clean"
