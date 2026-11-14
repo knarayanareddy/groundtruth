@@ -264,12 +264,14 @@ The count moved 109 → 149 = +28 adapter, +11 component, +1 determinism case au
 
 ## Still open
 
-- **Browser E2E was not re-run after these changes.** No Playwright browser can be installed here
-  (`cdn.playwright.dev` unreachable; `registry.npmjs.org` returns 200). The 15-test result in
-  `test-results/04-e2e.txt` predates the adapter panel and must be treated as stale. No browser test
-  was added for the adapter, because an unrunnable test would be an unverified claim. The new UI is
-  covered by jsdom component tests, which do not exercise a real rendering engine, real focus, real
-  layout at 375 px, or the built bundle.
+- **Browser E2E was not re-run in this environment — but CI ran it.** No Playwright browser can be
+  installed here (`cdn.playwright.dev` unreachable; `registry.npmjs.org` returns 200). The new CI
+  workflow did install Chromium and run the suite on the merged build: job `canonical`, step 9
+  "Browser tests" → **success** (run 43613213976). So the 15 e2e tests do pass against the adapter
+  panel, the CSP plugin and the polyfill removal. The exact per-test count could not be read back,
+  because the artifact host (`*.blob.core.windows.net`) is unreachable from this environment.
+  No *new* browser test was added for the adapter — it is covered by the 28 unit and 11 component
+  tests instead.
 - **Argon's legacy showcase content was not deleted**, only labelled superseded and its claims
   corrected. Removing `reviewData.ts`, `ukraineResearchData.ts` and the four non-Ground-Truth views
   from that build would be the fix if it is ever revived; its bundle still reports `Brier` ×12.
