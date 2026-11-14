@@ -7,6 +7,7 @@ import { buildRecord, parseImportText } from "./engine/record";
 import type { ReplayAction } from "./engine/replay";
 import { validateScenario } from "./engine/validate";
 import { ReplayControls } from "./ui/Controls";
+import { AdapterPanel } from "./ui/AdapterPanel";
 import { DependencyPanel } from "./ui/DependencyPanel";
 import { DisagreementPanel } from "./ui/DisagreementPanel";
 import { EventLog } from "./ui/EventLog";
@@ -260,6 +261,14 @@ export default function App() {
                 />
               </Section>
             </div>
+
+            <Section
+              id="adapter"
+              title="Optional test feed adapter (synthetic frames only)"
+              hint="Not required for anything above. It exists to show how a cached card must stop looking fresh when a poll fails, and how a late callback must not roll the state backwards."
+            >
+              <AdapterPanel scenario={scenario} />
+            </Section>
           </>
         )}
 

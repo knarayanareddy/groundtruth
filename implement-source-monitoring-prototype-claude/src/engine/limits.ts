@@ -23,6 +23,7 @@ export const LIMITATIONS: string[] = [
   "Report disagreement compares claims under an explicit rule. It does not say which claim is correct, nor prove deception, jamming or error.",
   "No detection, identification, trust score, confidence score, certification, field validation or privacy protection is provided.",
   "Exports may contain text you typed; they are not anonymised, encrypted or signed. Reviewer aliases are unauthenticated.",
+  "The optional test feed adapter is driven by buttons that produce synthetic frames in this tab. No physical device, serial port or network feed was attached or tested, and no result here is hardware-validated.",
 ];
 
 /** Per-state caveat shown on every source card (negations live here by design). */

@@ -1,5 +1,16 @@
 # Ground Truth + BlindSpot — Local-First Source Monitoring & Uncertainty Review Prototype
 
+> **STATUS (2026-11-14): SUPERSEDED — kept for provenance.**
+> The canonical implementation in this repository is now
+> [`../implement-source-monitoring-prototype-claude/`](../implement-source-monitoring-prototype-claude/).
+> An end-to-end review (`.review/REVIEW.md`) found both implementations' replay engines to be
+> equally correct against spec §4, but this copy ships the retained Idea Studio showcase in its
+> production bundle, including claim vocabulary spec §1 forbids (`Brier` ×12, `Sybil` ×1,
+> `OPSEC scrubbing` ×1 — see the corrected §1 row in `RESULTS_AND_LIMITATIONS.md`).
+> The genuinely additive part of this implementation — the optional §7 test-feed adapter harness —
+> has been ported into the canonical app as `src/engine/adapter.ts` with its own test coverage.
+> This directory is not deleted so that the independent work and its provenance remain auditable.
+
 ## Overview & Evidence Boundaries
 
 This repository contains the local-first **Ground Truth + BlindSpot** source-monitoring and uncertainty-review prototype implemented against `01_IMPLEMENTATION_SPEC.md`.

@@ -43,11 +43,18 @@ describe("legacy scripted panel is replaced, not wrapped (spec §1)", () => {
     expect(offenders).toEqual([]);
     expect(html).not.toMatch(/<link[^>]+href=["']https?:/i);
     expect(html).not.toMatch(/<script[^>]+src=["']https?:/i);
-    // Vite's modulepreload polyfill contains one fetch(_.href,x). It only runs for <link rel="modulepreload">, which the
-    // single-file build does not contain, and the CSP (connect-src 'none') blocks it anyway. Any OTHER network API is a failure.
-    const withoutPolyfill = html.replace("fetch(_.href,x)", "");
     expect(html).not.toMatch(/<link[^>]+rel=["']modulepreload/i);
-    expect(withoutPolyfill).not.toMatch(/\bfetch\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource/);
+    // No network API of any kind. Vite's modulepreload polyfill (which contains a fetch call) is
+    // disabled in vite.config.ts, because the single-file build emits no <link rel="modulepreload">
+    // and the CSP blocks connect-src anyway. If it is ever re-enabled, the only tolerable fetch() is
+    // one belonging to that polyfill — asserted structurally here so the check does not depend on
+    // minifier-chosen variable names.
+    for (const m of html.matchAll(/\bfetch\(/g)) {
+      const at = m.index ?? 0;
+      const before = html.slice(Math.max(0, at - 600), at);
+      expect(before, "any fetch() in the bundle must belong to Vite's inert modulepreload polyfill").toMatch(/modulepreload/);
+    }
+    expect(html).not.toMatch(/XMLHttpRequest|WebSocket|sendBeacon|EventSource/);
   });
 });
 

@@ -1,5 +1,21 @@
 # Results and limitations
 
+> **UPDATE 2026-11-14 (merge pass).** This directory is now the repository's canonical
+> implementation: the Protocol Argon copy's optional §7 adapter was ported in, and several defects
+> were fixed. Current measured state in this environment (Linux x86_64, Node v22.22.3, npm 10.9.8):
+>
+> | Command | Result |
+> |---|---|
+> | `npm ci` (regenerated lockfile) | exit 0, 173 packages |
+> | `npm run typecheck` | exit 0, no output |
+> | `npm run build` | exit 0, `dist/index.html 321.06 kB`, `CSP meta present and restrictive (verified, not patched)` |
+> | `npx vitest run` | **149 passed, 0 failed, 0 skipped** (7 files: 109 original + 28 adapter + 11 component + 1 auto-added determinism case) |
+> | `npx vite build` (bare, no postbuild hook) | CSP present — the limitation below is **fixed** |
+> | `npx playwright test` | **NOT RUN** — no browser installable here (see "What I could not implement or test") |
+>
+> Section statuses below are the original ones; §7 and §8 changed and are annotated inline.
+> `CHANGES_AND_PROVENANCE.md` has the full merge-pass record.
+
 Everything below was observed in the environment listed here. Nothing was run on a Mac, on a physical device, or by a human user other than the automated tests.
 
 ## Environment actually used
@@ -50,7 +66,7 @@ An earlier run in this session had failures that I fixed rather than hid: (1) 12
 
 **Loopback binding:** test 15 started `scripts/serve-local.mjs` and fetched it on 127.0.0.1 (200, CSP header present, path traversal not served, POST → 405). The sandbox's only non-loopback address was `169.254.0.21` (link-local); a connection to it was refused. This is not a LAN/firewall test.
 
-Screenshots: `test-results/artifacts/screenshot-reference-T12.png` (desktop, T=12), `screenshot-narrow-375.png`.
+Screenshots: `tests/e2e/app.spec.ts` writes `test-results/artifacts/screenshot-reference-T12.png` (desktop, T=12) and `screenshot-narrow-375.png` when it runs. **They are not committed to the repository** — only the JSON artifacts are — so those paths will not resolve until the e2e suite has been run in an environment where a browser can be installed.
 
 ## Status by numbered spec section
 
@@ -62,13 +78,14 @@ Screenshots: `test-results/artifacts/screenshot-reference-T12.png` (desktop, T=1
 | 4 | Reference fixture and expected states | **PASS** | `fixtures/reference-fixture.json`; `reference.test.ts` (17 tests, every T from 0…12, exact transition list); e2e 2 | The spec does not give the backfilled observation's value or the tolerance. **My choices:** value `"off"`, same comparison key, tolerance 0 s, so the backfill (observed t=1) is "not comparable — outside the declared tolerance" against A's t=2 report instead of becoming a second disagreement. Event IDs and names are mine. |
 | 5 | Dependency and disagreement view | **PASS** | `dependency-disagreement.test.ts` (19 tests); e2e 2 | Multi-dependency pairwise overlap, partial/unknown stay unknown, no independence claim or score, one limited deterministic cue, no winner. "Compatible unit" is defined as an identical string. |
 | 6 | Import, export and local data handling | **PASS** | `import-export.test.ts` (23 tests); e2e 5–8, 13 | Whole-input validation with JSON-path errors, all-or-nothing, 1 MiB/5000-event limits, plain-text rendering, recomputation on import with mismatch warning, notes/aliases labelled unauthenticated, explicit export notice, explicit-only localStorage with truthful status and delete control. Limits (50 sources, etc.) are my choices; documented. |
-| 7 | Optional hardware extension | **NOT IMPLEMENTED** | — | No adapter, no serial/USB/WebSerial code, no board connected, nothing tested. Not required for acceptance; nothing depends on it. |
-| 8 | Tests and evidence required | **PARTIAL** | Items 1–5: tests above. | Items 1–5 covered. **Item 6 (live polling/adapter): not applicable** — none exists. **Not covered:** Mac; browsers other than Chromium; real browser timer throttling (large wall-clock jumps are tested at the reducer level with irregular tick sizes and one huge tick, not by throttling a real background tab); performance at the 5000-event limit was not benchmarked; no user testing. |
+| 7 | Optional hardware extension | **IMPLEMENTED IN SOFTWARE — UNTESTED WITH HARDWARE** (changed by the merge pass) | `src/engine/adapter.ts`, `src/ui/AdapterPanel.tsx`, `tests/unit/adapter.test.ts` (28 tests) | Ported from the Protocol Argon implementation. An opt-in, separate state machine driven by buttons that emit synthetic frames: valid frame → fresh; poll failure → immediately not fresh with a locally advancing snapshot age; gap past threshold → stale; recovery reported as *receipt* with the gap measured; monotonic callback sequence so a late callback cannot roll state back; frames validated for protocol, sequence number and source ID. It opens no serial port, no USB device and no network connection, reads no wall clock, and is labelled `UNTESTED — NO PHYSICAL DEVICE ATTACHED`. **No physical device was attached or tested; nothing here is hardware-in-the-loop.** The core demo does not depend on it, and its state is deliberately excluded from the exported record. |
+| 8 | Tests and evidence required | **PARTIAL** | Items 1–5: tests above. Item 6: `tests/unit/adapter.test.ts`. | Items 1–5 covered (149 unit/component tests after the merge pass). **Item 6 (live polling/adapter) is now covered at unit and component level — but only against the SIMULATED feed.** The spec's item-6 properties are asserted: successful feed → failure/disconnect → cached data visibly stale/unknown → locally advancing age → recovery; and out-of-order callbacks cannot roll state backward. No real polling, transport or device was exercised, and no browser test was added for it because Playwright could not be installed here. **Still not covered:** Mac; browsers other than Chromium; the whole `tests/e2e/` suite after the merge pass (unrun, see below); real browser timer throttling (large wall-clock jumps are tested at the reducer level with irregular tick sizes and one huge tick, not by throttling a real background tab); performance at the 5000-event limit was not benchmarked; no user testing. |
 | 9 | Return deliverables | **PASS** (with caveat) | This ZIP | README with Mac commands (**untested on a Mac**), offline mode, five-minute demo, schema, semantics, export/import, storage cleanup; this file; `CHANGES_AND_PROVENANCE.md`; lockfile; fixtures; tests; prebuilt `dist/index.html`. |
 
 ## What I could not implement or test
 
-* **Optional hardware adapter (§7): not built.** No Atech or other device was available or connected; no serial log of any kind exists. This is not a claim about whether any specific board would work.
+* **Optional hardware adapter (§7): built in software during the merge pass, but no hardware.** `src/engine/adapter.ts` is a state machine fed by buttons that emit synthetic frames in the browser tab. No device of any kind was available or attached, no serial or USB code exists, and no serial log of any kind was produced or fabricated. This says nothing about whether any specific board would work.
+* **The e2e suite has not been re-run since the merge pass.** The 15-test result in `test-results/04-e2e.txt` predates the adapter panel, the CSP plugin and the polyfill removal. No Playwright browser could be installed in this environment (`cdn.playwright.dev` is unreachable; `registry.npmjs.org` responds normally), so those numbers must be treated as stale. The new UI is covered instead by 11 jsdom component tests, which do not exercise a real rendering engine, real focus behaviour, real layout at 375 px, or the built bundle.
 * **macOS:** nothing was run on a Mac. Setup instructions are written for macOS but were exercised only on Linux.
 * **Browsers:** Chromium headless shell only. File download, file picker and localStorage behaviour in Safari/Firefox/desktop Chrome are untested. Chromium's `file://` localStorage worked in the tests; other browsers may restrict `file://` storage — use `npm run serve` if so.
 * **Accessibility:** keyboard operation, accessible names, visible focus and non-colour coding were tested automatically; there was no screen-reader run, no axe/Lighthouse audit, and no contrast measurement.
@@ -77,7 +94,8 @@ Screenshots: `test-results/artifacts/screenshot-reference-T12.png` (desktop, T=1
 * **Spec §3 latitude I took:** future `observedAt` is flagged (not rejected); out-of-order files are sorted with a warning (not rejected); only duplicate IDs are rejected as ambiguous, identical-content duplicates under different IDs are kept with a warning.
 * **Drop windows and synthetic heartbeats** are my interpretation of the optional "inject/drop" control. Drop windows act only on original-log heartbeats received strictly after the moment they were authored; injected heartbeats are stamped at the current T, so they change the state *at* T (and after) but never earlier results.
 * **Bundle contents:** the built page contains Vite's standard modulepreload polyfill, which includes one `fetch(` call. It only runs for `<link rel="modulepreload">` elements, which the single-file build does not contain, and the build's CSP (`connect-src 'none'`) would block it. This is disclosed rather than hidden; the test allows exactly that one pattern and nothing else.
-* **CSP is added by a post-build step** (`scripts/harden-dist.mjs`, run by npm's `postbuild` hook) because I did not edit `vite.config.ts`. If someone builds with `npx vite build` directly, the hook does not run and the CSP meta is absent (the app still makes no requests, but the browser-level guard is missing). The dev server has no CSP.
+* **CSP is now injected by the build itself.** (Previously a post-build hook, with the disclosed gap that a bare `npx vite build` skipped it.) A `cspMeta()` plugin in `vite.config.ts` adds the tag during any build; `scripts/harden-dist.mjs` now verifies the tag and its key directives and fails the build if they are missing. Verified in this environment: `npx vite build --outDir /tmp/rawbuild` produces `default-src 'none'`. The dev server still has no CSP.
+* **Dead polyfill removed.** `build.modulePreload.polyfill: false` — the single-file build emits no `<link rel="modulepreload">`, so Vite's preload polyfill was unreachable. The bundle's `fetch(` count went from 1 to 0.
 * **Dev server:** `npm run dev` forces `--host 127.0.0.1`. The supplied `vite.config.ts` contains no `server` block, so `npx vite` alone would use Vite's default (localhost) too; the handoff's `starting_point/vite.config.ts` instead had `host: "0.0.0.0", allowedHosts: true`, which I did not carry over.
 * **Only one implementation:** the task describes two independent copies; I produced one and did not compare against any other.
 * Reviewer notes and exports are plain text in plain JSON. Do not enter sensitive information.
