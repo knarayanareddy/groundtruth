@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "groundtruth-blindspot/v1",
+  "scenarioId": "spec-sec4-reference-fixture",
+  "title": "Section 4 Reference Fixture — Multi-Source Heartbeat, Backfill & Disagreement",
+  "description": "Deterministic synthetic receiver-clock scenario (12s duration, 5s heartbeat threshold). Sources A and B share declared dependency gateway-1 with distinct power labels (power-1 vs power-2); Source C has unknown dependency declarations and never transmits. Demonstrates exact threshold boundary (T=5), historical backfill reception without heartbeat restoration (T=6), stale-to-fresh heartbeat receipt recovery (T=7), and comparable categorical observation disagreement (T=2).",
+  "dataProvenance": "synthetic",
+  "timeUnit": "seconds",
+  "virtualDuration": 12,
+  "heartbeatThreshold": 5,
+  "comparisonTolerance": 0,
+  "dependencies": [
+    {
+      "id": "gateway-1",
+      "name": "Shared Field Telemetry Gateway 1",
+      "category": "network_gateway",
+      "description": "Declared shared relay node listed by both Source A and Source B.",
+      "declaredBy": "Synthetic scenario configuration (human-entered metadata, unverified)"
+    },
+    {
+      "id": "power-1",
+      "name": "Power Feed Circuit 1",
+      "category": "power",
+      "description": "Declared power bus for Source A. Distinct label from power-2 does not prove physical independence.",
+      "declaredBy": "Synthetic scenario configuration (human-entered metadata, unverified)"
+    },
+    {
+      "id": "power-2",
+      "name": "Power Feed Circuit 2",
+      "category": "power",
+      "description": "Declared power bus for Source B. Distinct label from power-1 does not prove physical independence.",
+      "declaredBy": "Synthetic scenario configuration (human-entered metadata, unverified)"
+    }
+  ],
+  "sources": [
+    {
+      "id": "A",
+      "name": "Source A (Synthetic Node Alpha)",
+      "description": "Synthetic source reporting heartbeats at T=0s and T=5s, and indicator=on at T=2s.",
+      "dependencyIds": ["gateway-1", "power-1"],
+      "dependencyKnowledge": "complete",
+      "declarationProvenance": "Synthetic scenario manifest (human-declared metadata, not proof of independence)"
+    },
+    {
+      "id": "B",
+      "name": "Source B (Synthetic Node Bravo)",
+      "description": "Synthetic source reporting heartbeats at T=0s and T=7s, indicator=off at T=2s, and backfilled observation (observedAt=1s) received at T=6s.",
+      "dependencyIds": ["gateway-1", "power-2"],
+      "dependencyKnowledge": "complete",
+      "declarationProvenance": "Synthetic scenario manifest (human-declared metadata, not proof of independence)"
+    },
+    {
+      "id": "C",
+      "name": "Source C (Synthetic Node Charlie)",
+      "description": "Synthetic registered source with unknown dependency declarations and zero received packets.",
+      "dependencyIds": [],
+      "dependencyKnowledge": "unknown",
+      "declarationProvenance": "Unverified placeholder registration (dependencies unknown; not established independent)"
+    }
+  ],
+  "events": [
+    {
+      "id": "hb-A-0",
+      "sourceId": "A",
+      "receivedAt": 0,
+      "type": "heartbeat"
+    },
+    {
+      "id": "hb-B-0",
+      "sourceId": "B",
+      "receivedAt": 0,
+      "type": "heartbeat"
+    },
+    {
+      "id": "obs-A-2",
+      "sourceId": "A",
+      "receivedAt": 2,
+      "type": "observation",
+      "value": "indicator=on",
+      "comparisonKey": {
+        "contextId": "ctx-panel-alpha",
+        "subject": "panel-alpha",
+        "property": "indicator",
+        "unit": "categorical_state"
+      },
+      "observedAt": 2,
+      "clockQuality": "synthetic_synchronized"
+    },
+    {
+      "id": "obs-B-2",
+      "sourceId": "B",
+      "receivedAt": 2,
+      "type": "observation",
+      "value": "indicator=off",
+      "comparisonKey": {
+        "contextId": "ctx-panel-alpha",
+        "subject": "panel-alpha",
+        "property": "indicator",
+        "unit": "categorical_state"
+      },
+      "observedAt": 2,
+      "clockQuality": "synthetic_synchronized"
+    },
+    {
+      "id": "hb-A-5",
+      "sourceId": "A",
+      "receivedAt": 5,
+      "type": "heartbeat"
+    },
+    {
+      "id": "obs-B-6-backfill",
+      "sourceId": "B",
+      "receivedAt": 6,
+      "type": "observation",
+      "value": "indicator=off",
+      "comparisonKey": {
+        "contextId": "ctx-panel-alpha",
+        "subject": "panel-alpha",
+        "property": "indicator",
+        "unit": "categorical_state"
+      },
+      "observedAt": 1,
+      "clockQuality": "synthetic_synchronized",
+      "isBackfill": true
+    },
+    {
+      "id": "hb-B-7",
+      "sourceId": "B",
+      "receivedAt": 7,
+      "type": "heartbeat"
+    }
+  ]
+}

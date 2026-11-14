@@ -1,0 +1,6 @@
+== 01-typecheck: npm run typecheck
+
+> react-vite-tailwind@0.0.0 typecheck
+> tsc --noEmit && tsc --noEmit -p tsconfig.test.json
+
+exit code: 0

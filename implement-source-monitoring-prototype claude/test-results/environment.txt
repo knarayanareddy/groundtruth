@@ -1,0 +1,5 @@
+date (wall clock, informational only): 2026-11-14T12:26:43Z
+uname: Linux 6.1.189+ x86_64
+node: v20.20.2   npm: 10.8.2
+vitest: vitest/4.1.12 linux-x64 node-v20.20.2
+playwright: Version 1.65.1

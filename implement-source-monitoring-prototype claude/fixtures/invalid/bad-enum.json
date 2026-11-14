@@ -1,0 +1,137 @@
+{
+  "schema": "groundtruth-blindspot-scenario",
+  "schemaVersion": 1,
+  "engineVersion": "1.0",
+  "meta": {
+    "title": "Reference fixture: three synthetic sources",
+    "description": "Synthetic data only. Heartbeats: A@0, B@0, A@5, B@7 (receiver time, integer elapsed seconds). Source C never reports. Two comparable categorical reports at t=2 disagree. One backfilled B report (observed t=1) is received at t=6. No physical device is involved.",
+    "dataOrigin": "synthetic"
+  },
+  "timeUnit": "seconds",
+  "durationSeconds": 12,
+  "heartbeatThresholdSeconds": 5,
+  "comparisonToleranceSeconds": 0,
+  "dependencies": [
+    {
+      "id": "gateway-1",
+      "name": "Gateway 1 (synthetic label)"
+    },
+    {
+      "id": "power-1",
+      "name": "Power feed 1 (synthetic label)"
+    },
+    {
+      "id": "power-2",
+      "name": "Power feed 2 (synthetic label)"
+    }
+  ],
+  "sources": [
+    {
+      "id": "A",
+      "name": "Source A (synthetic)",
+      "dependencyKnowledge": "complete",
+      "dependencyIds": [
+        "gateway-1",
+        "power-1"
+      ],
+      "dependencyDeclaredBy": "Fixture author (synthetic declaration, unverified)"
+    },
+    {
+      "id": "B",
+      "name": "Source B (synthetic)",
+      "dependencyKnowledge": "complete",
+      "dependencyIds": [
+        "gateway-1",
+        "power-2"
+      ],
+      "dependencyDeclaredBy": "Fixture author (synthetic declaration, unverified)"
+    },
+    {
+      "id": "C",
+      "name": "Source C (synthetic)",
+      "dependencyKnowledge": "mostly",
+      "dependencyIds": [],
+      "dependencyDeclaredBy": "Fixture author (dependencies unknown; nothing declared)"
+    }
+  ],
+  "events": [
+    {
+      "id": "hb-A-0",
+      "sourceId": "A",
+      "receivedAt": 0,
+      "type": "heartbeat"
+    },
+    {
+      "id": "hb-B-0",
+      "sourceId": "B",
+      "receivedAt": 0,
+      "type": "heartbeat"
+    },
+    {
+      "id": "obs-A-2",
+      "sourceId": "A",
+      "receivedAt": 2,
+      "type": "observation",
+      "observation": {
+        "comparisonKey": {
+          "subject": "demo-indicator-1",
+          "property": "indicator",
+          "unit": "none",
+          "context": "synthetic-bench-scene-1"
+        },
+        "value": "on",
+        "observedAt": 2,
+        "clockQuality": "synthetic_synchronized",
+        "backfilled": false
+      }
+    },
+    {
+      "id": "obs-B-2",
+      "sourceId": "B",
+      "receivedAt": 2,
+      "type": "observation",
+      "observation": {
+        "comparisonKey": {
+          "subject": "demo-indicator-1",
+          "property": "indicator",
+          "unit": "none",
+          "context": "synthetic-bench-scene-1"
+        },
+        "value": "off",
+        "observedAt": 2,
+        "clockQuality": "synthetic_synchronized",
+        "backfilled": false
+      }
+    },
+    {
+      "id": "hb-A-5",
+      "sourceId": "A",
+      "receivedAt": 5,
+      "type": "heartbeat"
+    },
+    {
+      "id": "obs-B-backfill-6",
+      "sourceId": "B",
+      "receivedAt": 6,
+      "type": "observation",
+      "observation": {
+        "comparisonKey": {
+          "subject": "demo-indicator-1",
+          "property": "indicator",
+          "unit": "none",
+          "context": "synthetic-bench-scene-1"
+        },
+        "value": "off",
+        "observedAt": 1,
+        "clockQuality": "synthetic_synchronized",
+        "backfilled": true
+      }
+    },
+    {
+      "id": "hb-B-7",
+      "sourceId": "B",
+      "receivedAt": 7,
+      "type": "heartbeat"
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "schema": "groundtruth-blindspot-record",
+  "schemaVersion": 1,
+  "engineVersion": "1.0",
+  "tool": {
+    "name": "groundtruth-blindspot",
+    "version": "1.0.0"
+  },
+  "labels": [
+    "SYNTHETIC OR USER-PROVIDED DATA — never automatically verified.",
+    "Replay of a recorded or simulated event log on a virtual clock. Not live. Not hardware.",
+    "A heartbeat only means a message was received. It does not show a sensor is working or correct.",
+    "Silence or a stale source is not evidence that an area or scene is clear.",
+    "Declared dependencies are human-provided metadata, not proof of independence or of overlap completeness.",
+    "Report disagreement is a comparison of claims; it does not say which claim is correct."
+  ],
+  "derivationRules": [
+    "Time is integer virtual elapsed seconds on the receiver clock. The replay clock T never reads the wall clock.",
+    "Ordering: events sort by receivedAt ascending, then by event id (plain code-unit string comparison). All events with receivedAt <= T apply before state at T is computed.",
+    "Heartbeat state at T: WAITING / UNKNOWN if no heartbeat has been received; FRESH HEARTBEAT if 0 <= T - lastHeartbeatReceivedAt < threshold; STALE / UNKNOWN if T - lastHeartbeatReceivedAt >= threshold.",
+    "A heartbeat received exactly at lastHeartbeatReceivedAt + threshold is processed first, so the source is FRESH at that T.",
+    "Observations never reset heartbeat freshness, including backfilled observations that were received recently.",
+    "Transitions are computed analytically from the received heartbeats, at their exact boundary times (lastHeartbeat + threshold for staleness; the heartbeat time for recovery), regardless of how T was reached.",
+    "Observation age = T - observedAt, shown only when observedAt is known and not later than receivedAt. It is reliable only under a synthetic_synchronized clock; otherwise it is a claimed age.",
+    "observedAt later than receivedAt is flagged CLOCK SKEW; the event is kept, its age is not computed and it is never treated as fresh or comparable.",
+    "Disagreement cue: two reports from different sources are comparable only if subject, property and context match exactly, units are identical strings, values are present, both clocks are synthetic_synchronized with known observedAt, and |observedAt difference| <= comparisonToleranceSeconds. Otherwise: not comparable / insufficient information. No winner is chosen.",
+    "Dependencies are declared metadata. A shared declared dependency is shown with its ID and assertion source. 'No overlap declared' is never reported as independence, and unknown or partial knowledge stays unknown.",
+    "User-injected synthetic heartbeats and drop windows are explicit synthetic entries in the export. Drop windows apply only to heartbeats of the original log received strictly after the moment they were authored.",
+    "Reviewer notes are a separate, non-causal layer; during ordinary replay only notes with authoredAtT <= T are shown."
+  ],
+  "exportNotice": "This export may contain text you typed. It is not anonymised, encrypted or signed. Reviewer aliases are unauthenticated. The importing app recomputes all status from events and does not trust derivedSnapshot.",
+  "scenario": {
+    "schema": "groundtruth-blindspot-scenario",
+    "schemaVersion": 1,
+    "engineVersion": "1.0",
+    "meta": {
+      "title": "Reference fixture: three synthetic sources",
+      "description": "Synthetic data only. Heartbeats: A@0, B@0, A@5, B@7 (receiver time, integer elapsed seconds). Source C never reports. Two comparable categorical reports at t=2 disagree. One backfilled B report (observed t=1) is received at t=6. No physical device is involved.",
+      "dataOrigin": "synthetic"
+    },
+    "timeUnit": "seconds",
+    "durationSeconds": 12,
+    "heartbeatThresholdSeconds": 5,
+    "comparisonToleranceSeconds": 0,
+    "dependencies": [
+      {
+        "id": "gateway-1",
+        "name": "Gateway 1 (synthetic label)"
+      },
+      {
+        "id": "power-1",
+        "name": "Power feed 1 (synthetic label)"
+      },
+      {
+        "id": "power-2",
+        "name": "Power feed 2 (synthetic label)"
+      }
+    ],
+    "sources": [
+      {
+        "id": "A",
+        "name": "Source A (synthetic)",
+        "dependencyKnowledge": "complete",
+        "dependencyIds": [
+          "gateway-1",
+          "power-1"
+        ],
+        "dependencyDeclaredBy": "Fixture author (synthetic declaration, unverified)"
+      },
+      {
+        "id": "B",
+        "name": "Source B (synthetic)",
+        "dependencyKnowledge": "complete",
+        "dependencyIds": [
+          "gateway-1",
+          "power-2"
+        ],
+        "dependencyDeclaredBy": "Fixture author (synthetic declaration, unverified)"
+      },
+      {
+        "id": "C",
+        "name": "Source C (synthetic)",
+        "dependencyKnowledge": "unknown",
+        "dependencyIds": [],
+        "dependencyDeclaredBy": "Fixture author (dependencies unknown; nothing declared)"
+      }
+    ],
+    "events": [
+      {
+        "id": "hb-A-0",
+        "sourceId": "A",
+        "receivedAt": 0,
+        "type": "heartbeat"
+      },
+      {
+        "id": "hb-B-0",
+        "sourceId": "B",
+        "receivedAt": 0,
+        "type": "heartbeat"
+      },
+      {
+        "id": "obs-A-2",
+        "sourceId": "A",
+        "receivedAt": 2,
+        "type": "observation",
+        "observation": {
+          "comparisonKey": {
+            "subject": "demo-indicator-1",
+            "property": "indicator",
+            "unit": "none",
+            "context": "synthetic-bench-scene-1"
+          },
+          "value": "on",
+          "observedAt": 2,
+          "clockQuality": "synthetic_synchronized",
+          "backfilled": false
+        }
+      },
+      {
+        "id": "obs-B-2",
+        "sourceId": "B",
+        "receivedAt": 2,
+        "type": "observation",
+        "observation": {
+          "comparisonKey": {
+            "subject": "demo-indicator-1",
+            "property": "indicator",
+            "unit": "none",
+            "context": "synthetic-bench-scene-1"
+          },
+          "value": "off",
+          "observedAt": 2,
+          "clockQuality": "synthetic_synchronized",
+          "backfilled": false
+        }
+      },
+      {
+        "id": "hb-A-5",
+        "sourceId": "A",
+        "receivedAt": 5,
+        "type": "heartbeat"
+      },
+      {
+        "id": "obs-B-backfill-6",
+        "sourceId": "B",
+        "receivedAt": 6,
+        "type": "observation",
+        "observation": {
+          "comparisonKey": {
+            "subject": "demo-indicator-1",
+            "property": "indicator",
+            "unit": "none",
+            "context": "synthetic-bench-scene-1"
+          },
+          "value": "off",
+          "observedAt": 1,
+          "clockQuality": "synthetic_synchronized",
+          "backfilled": true
+        }
+      },
+      {
+        "id": "hb-B-7",
+        "sourceId": "B",
+        "receivedAt": 7,
+        "type": "heartbeat"
+      }
+    ]
+  },
+  "userSynthetic": {
+    "events": [
+      {
+        "id": "syn-hb-1",
+        "sourceId": "C",
+        "receivedAt": 9,
+        "type": "heartbeat",
+        "synthetic": true,
+        "authoredAtT": 9
+      }
+    ],
+    "dropWindows": []
+  },
+  "replay": {
+    "currentT": 7,
+    "speed": 1
+  },
+  "reviewerNotes": [
+    {
+      "id": "note-1",
+      "text": "early <b>bold?</b> <img src=x onerror=\"window.__pwned=1\">",
+      "authoredAtT": 3,
+      "alias": "reviewer-one"
+    },
+    {
+      "id": "note-2",
+      "text": "late note authored at nine",
+      "authoredAtT": 9,
+      "alias": "reviewer-one"
+    }
+  ],
+  "derivedSnapshot": {
+    "atT": 7,
+    "sources": [
+      {
+        "id": "A",
+        "heartbeatState": "FRESH_HEARTBEAT",
+        "lastPacketReceivedAt": 5,
+        "lastHeartbeatReceivedAt": 5
+      },
+      {
+        "id": "B",
+        "heartbeatState": "FRESH_HEARTBEAT",
+        "lastPacketReceivedAt": 7,
+        "lastHeartbeatReceivedAt": 7
+      },
+      {
+        "id": "C",
+        "heartbeatState": "WAITING_UNKNOWN",
+        "lastPacketReceivedAt": null,
+        "lastHeartbeatReceivedAt": null
+      }
+    ],
+    "transitions": [
+      {
+        "sourceId": "A",
+        "at": 0,
+        "from": "WAITING_UNKNOWN",
+        "to": "FRESH_HEARTBEAT"
+      },
+      {
+        "sourceId": "B",
+        "at": 0,
+        "from": "WAITING_UNKNOWN",
+        "to": "FRESH_HEARTBEAT"
+      },
+      {
+        "sourceId": "B",
+        "at": 5,
+        "from": "FRESH_HEARTBEAT",
+        "to": "STALE_UNKNOWN"
+      },
+      {
+        "sourceId": "B",
+        "at": 7,
+        "from": "STALE_UNKNOWN",
+        "to": "FRESH_HEARTBEAT"
+      }
+    ],
+    "comparisons": [
+      {
+        "id": "obs-A-2~obs-B-2",
+        "verdict": "reports_differ"
+      },
+      {
+        "id": "obs-A-2~obs-B-backfill-6",
+        "verdict": "not_comparable"
+      }
+    ]
+  },
+  "exportedAtWallClock": "2026-11-14T12:27:05.978Z"
+}

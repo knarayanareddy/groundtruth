@@ -1,0 +1,34 @@
+CLEAN-COPY VERIFICATION (unzipped to a new directory; no node_modules carried over)
+node v20.20.2 npm 10.8.2 Linux 6.1.189+ x86_64
+$ npm ci
+
+added 123 packages in 2s
+exit: 0
+$ npm run typecheck
+> react-vite-tailwind@0.0.0 typecheck
+> tsc --noEmit && tsc --noEmit -p tsconfig.test.json
+
+$ npm run build
+
+> react-vite-tailwind@0.0.0 postbuild
+> node scripts/harden-dist.mjs
+
+dist/index.html: CSP meta present
+$ npm test
+ ✓ tests/unit/dependency-disagreement.test.ts (19 tests) 18ms
+ ✓ tests/unit/claims-and-bundle.test.ts (14 tests) 39ms
+
+ Test Files  5 passed (5)
+      Tests  109 passed (109)
+   Start at  12:27:35
+   Duration  1.32s (transform 264ms, setup 0ms, import 392ms, tests 184ms, environment 1ms)
+
+$ npx playwright test
+  ✓  14 tests/e2e/app.spec.ts:395:1 › built bundle: legacy scripted panel absent, CSP present, no external references (243ms)
+  ✓  15 tests/e2e/server.spec.ts:11:1 › scripts/serve-local.mjs binds 127.0.0.1 only and serves the built app with a restrictive CSP (87ms)
+
+  15 passed (13.0s)
+sha256 of rebuilt dist/index.html:
+8c3f90ceb7b306c3918b8e657ae4755d85241e31dec2f73f13c6d635f9125e27  dist/index.html
+sha256 of shipped dist/index.html:
+8c3f90ceb7b306c3918b8e657ae4755d85241e31dec2f73f13c6d635f9125e27  /home/user/sandbox/dist/index.html

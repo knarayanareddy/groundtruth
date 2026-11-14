@@ -1,0 +1,22 @@
+== 02-build: npm run build
+
+> react-vite-tailwind@0.0.0 build
+> vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 51 modules transformed.
+rendering chunks...
+[plugin vite:singlefile] 
+
+[plugin vite:singlefile] Inlining: index-QJqTmqRn.js
+[plugin vite:singlefile] Inlining: style-DJR6SSNU.css
+computing gzip size...
+dist/index.html  313.83 kB │ gzip: 91.40 kB
+✓ built in 1.78s
+
+> react-vite-tailwind@0.0.0 postbuild
+> node scripts/harden-dist.mjs
+
+dist/index.html: CSP meta present
+exit code: 0

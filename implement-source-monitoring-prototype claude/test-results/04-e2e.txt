@@ -1,0 +1,22 @@
+== 04-e2e: npx playwright test
+
+Running 15 tests using 1 worker
+
+  ✓   1 tests/e2e/app.spec.ts:7:1 › initial state: no scenario, no data shown as fresh; banner and title are honest (217ms)
+  ✓   2 tests/e2e/app.spec.ts:17:1 › reference fixture: exact §4 states via stepping, with recovery, dependencies and disagreement (1.4s)
+  ✓   3 tests/e2e/app.spec.ts:90:1 › play with real timers reaches stale and recovery; play/step/seek give identical text (4.8s)
+  ✓   4 tests/e2e/app.spec.ts:123:1 › causal replay: nothing from the future is visible before it is received (266ms)
+  ✓   5 tests/e2e/app.spec.ts:132:1 › export → clear → import reproduces state, transitions, synthetic entries and notes; HTML note stays literal (784ms)
+  ✓   6 tests/e2e/app.spec.ts:189:1 › tampered snapshot in an imported record shows a warning and recomputed state wins (411ms)
+  ✓   7 tests/e2e/app.spec.ts:207:1 › invalid, malformed and oversized imports are rejected with path-specific errors and the session is untouched (773ms)
+  ✓   8 tests/e2e/app.spec.ts:242:1 › imported HTML/script/link text renders literally; nothing executes or is fetched (259ms)
+  ✓   9 tests/e2e/app.spec.ts:257:1 › synthetic controls: injected heartbeat and drop window are explicit events and affect derived state (497ms)
+  ✓  10 tests/e2e/app.spec.ts:280:1 › keyboard operation: Enter/Space on buttons, shortcuts, labelled controls, visible focus (492ms)
+  ✓  11 tests/e2e/app.spec.ts:326:1 › status is legible without color: text label, glyph and border style differ per state (306ms)
+  ✓  12 tests/e2e/app.spec.ts:341:1 › narrow viewport (375 px): no horizontal page overflow, controls reachable (634ms)
+  ✓  13 tests/e2e/app.spec.ts:358:1 › optional browser storage: explicit save, restore, delete; denied/quota errors are reported truthfully (817ms)
+  ✓  14 tests/e2e/app.spec.ts:395:1 › built bundle: legacy scripted panel absent, CSP present, no external references (317ms)
+  ✓  15 tests/e2e/server.spec.ts:11:1 › scripts/serve-local.mjs binds 127.0.0.1 only and serves the built app with a restrictive CSP (101ms)
+
+  15 passed (13.1s)
+exit code: 0
